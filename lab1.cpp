@@ -43,6 +43,7 @@ using namespace std;
 const int MAX_PARTICLES = 2000;
 
 const float GRAVITY = 0.1;
+const int MAX_BOXES = 5;
 
 //some structures
 
@@ -64,18 +65,21 @@ struct Particle {
 class Global {
 public:
 	int xres, yres;
-	Shape box;
+	Shape box[MAX_BOXES];
 	Particle particle[MAX_PARTICLES];
 	int n;
 	Global() {
 		xres = 800;
 		yres = 600;
 		//define a box shape
-		box.width = 100;
-		box.height = 10;
-		box.center.x = 120 + 5*65;
-		box.center.y = 500 - 5*60;
-		n = 0;
+		for(int i=0; i<MAX_BOXES;i++)
+		{   
+		   box[i].width = 100;
+		   box[i].height = 15;
+		   box[i].center.x = 120 + i*65;
+		   box[i].center.y = 500 - i*60;
+		   n = 0;
+		}
 	}
 } g;
 
@@ -143,7 +147,7 @@ void check_mouse(XEvent *e);
 int check_keys(XEvent *e);
 void movement();
 void render();
-
+void makeParticle(int, int);
 
 
 //=====================================
@@ -164,8 +168,10 @@ int main()
 		}
 		movement();
 		render();
+		makeParticle(100, 550);
 		x11.swapBuffers();
 	}
+	
 	return 0;
 }
 
@@ -192,7 +198,7 @@ void makeParticle(int x, int y)
 	p->s.center.x = x;
 	p->s.center.y = y;
 	p->velocity.y = ((float)rand() / (float)RAND_MAX) * 1.0;
-	p->velocity.x = ((float)rand() / (float)RAND_MAX) * 1.0 - 0.5;
+	p->velocity.x = ((float)rand() / (float)RAND_MAX) * 1.0;
 	++g.n;
 }
 
@@ -229,9 +235,9 @@ void check_mouse(XEvent *e)
 		if (savex != e->xbutton.x || savey != e->xbutton.y) {
 			savex = e->xbutton.x;
 			savey = e->xbutton.y;
-			int y = g.yres - e->xbutton.y;
-			for (int i=0; i<10; i++)
-			    makeParticle(e->xbutton.x,y);
+		//	int y = g.yres - e->xbutton.y;
+		//	for (int i=0; i<10; i++)
+		//	    makeParticle(e->xbutton.x,y);
 
 
 		}
@@ -270,7 +276,9 @@ void movement()
 	p->s.center.y += p->velocity.y;
         p->velocity.y -= GRAVITY;
 	//check for collision with shapes...
-	Shape *s = &g.box;
+       //for loop
+    for (int j=0; j<MAX_BOXES; j++) {
+	 Shape *s = &g.box[j];
 	if ( p->s.center.y < s->center.y + s->height &&
 	       p->s.center.y > s->center.y - s->height &&	
                p->s.center.x > s->center.x - s->width &&
@@ -285,32 +293,42 @@ void movement()
 	}
     }
 
-
+  }
 }
 
 void render()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 	//Draw shapes...
+	
+	//draw a circle
 	//
+	
 	//draw a box
 	Shape *s;
 	glColor3ub(90,140,90);
-	s = &g.box;
-	glPushMatrix();
-	glTranslatef(s->center.x, s->center.y, s->center.z);
-	float w, h;
-	w = s->width;
-	h = s->height;
-	glBegin(GL_QUADS);
+
+	for(int j=0; j<MAX_BOXES; j++){
+	  s = &g.box[j];
+	  glPushMatrix();
+	  glTranslatef(s->center.x, s->center.y, s->center.z);
+	  float w, h;
+	  w = s->width;
+	  h = s->height;
+	  glBegin(GL_QUADS);
 		glVertex2i(-w, -h);
 		glVertex2i(-w,  h);
 		glVertex2i( w,  h);
 		glVertex2i( w, -h);
-	glEnd();
-	glPopMatrix();
+	  glEnd();
+	  glPopMatrix();
+        }
 	//
 	//Draw the particle here
+	float w,h;
+	w = s->width;
+	h = s->height;
+
 	for (int i=0; i<g.n; i++) {
 	  glPushMatrix();
 	  glColor3ub(150,160,220);
